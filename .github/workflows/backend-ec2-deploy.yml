@@ -1,0 +1,52 @@
+name: Backend CI/CD to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "source-code/backend/**"
+      - ".github/workflows/backend-ec2-deploy.yml"
+  workflow_dispatch:
+
+jobs:
+  test-build-deploy:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: source-code/backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Test
+        run: mvn clean test
+
+      - name: Package
+        run: mvn clean package -DskipTests
+
+      - name: Prepare SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/ims_backend_key
+          chmod 600 ~/.ssh/ims_backend_key
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Upload jar to EC2
+        run: |
+          scp -i ~/.ssh/ims_backend_key target/major-incident-management-system-0.0.1-SNAPSHOT.jar \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/tmp/ims-backend.jar
+
+      - name: Restart backend service
+        run: |
+          ssh -i ~/.ssh/ims_backend_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "sudo install -o ims -g ims -m 0644 /tmp/ims-backend.jar /opt/ims/ims-backend.jar && sudo systemctl restart ims-backend && sudo systemctl status ims-backend --no-pager"

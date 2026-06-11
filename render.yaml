@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: ims-backend
+    runtime: java
+    plan: free
+    rootDir: source-code/backend
+    buildCommand: mvn clean package -DskipTests
+    startCommand: java -jar target/major-incident-management-system-0.0.1-SNAPSHOT.jar
+    envVars:
+      - key: DB_PLATFORM
+        value: postgresql
+      - key: DB_DRIVER
+        value: org.postgresql.Driver
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_DISPLAY_NAME
+        value: Demo Administrator
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.1-flash-lite
