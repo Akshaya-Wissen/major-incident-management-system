@@ -2,3 +2,4 @@ source-code/frontend/node_modules/
 source-code/frontend/dist/
 source-code/backend/target/
 *.log
+.deploy-secrets.local
