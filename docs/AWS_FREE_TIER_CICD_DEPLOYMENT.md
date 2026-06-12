@@ -71,7 +71,7 @@ ssh -i your-key.pem ec2-user@<ec2-public-ip>
 Copy and run:
 
 ```bash
-curl -o ec2-bootstrap.sh https://raw.githubusercontent.com/<your-github-user>/<your-repo>/main/scripts/aws/ec2-bootstrap.sh
+curl -o ec2-bootstrap.sh https://raw.githubusercontent.com/Akshaya-Wissen/major-incident-management-system/main/scripts/aws/ec2-bootstrap.sh
 chmod +x ec2-bootstrap.sh
 ./ec2-bootstrap.sh
 ```
