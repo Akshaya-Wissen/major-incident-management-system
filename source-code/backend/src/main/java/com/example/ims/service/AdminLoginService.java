@@ -1,63 +1,89 @@
 package com.example.ims.service;
 
 import com.example.ims.dto.AdminLoginRequest;
+import com.example.ims.dto.AdminRegisterRequest;
 import com.example.ims.dto.AdminLoginResponse;
+import com.example.ims.entity.AppUser;
 import com.example.ims.exception.InvalidIncidentTransitionException;
-import java.util.List;
+import com.example.ims.repository.AppUserRepository;
+import java.time.LocalDateTime;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AdminLoginService {
-    private static final String DEMO_PASSWORD = "demo123";
-    private static final List<DemoUser> DEMO_USERS = List.of(
-            new DemoUser("aarav.mehta", "Aarav Mehta", "TEAM_LEAD"),
-            new DemoUser("maya.singh", "Maya Singh", "TEAM_LEAD"),
-            new DemoUser("priya.menon", "Priya Menon", "TEAM_LEAD"),
-            new DemoUser("anika.rao", "Anika Rao", "ESCALATION_MANAGER"),
-            new DemoUser("karan.malhotra", "Karan Malhotra", "ESCALATION_MANAGER"),
-            new DemoUser("meera.joshi", "Meera Joshi", "ESCALATION_MANAGER"),
-            new DemoUser("pooja.shah", "Pooja Shah", "ESCALATION_MANAGER"),
-            new DemoUser("nikhil.batra", "Nikhil Batra", "SENIOR_MANAGER"),
-            new DemoUser("rehan.kapur", "Rehan Kapur", "SENIOR_MANAGER"),
-            new DemoUser("sameer.desai", "Sameer Desai", "SENIOR_MANAGER"),
-            new DemoUser("sana.khan", "Sana Khan", "SENIOR_MANAGER"),
-            new DemoUser("dev.patel", "Dev Patel", "TECHNICAL_LEAD"),
-            new DemoUser("fatima.ali", "Fatima Ali", "TECHNICAL_LEAD"),
-            new DemoUser("sara.dsouza", "Sara Dsouza", "TECHNICAL_LEAD"),
-            new DemoUser("tara.bose", "Tara Bose", "TECHNICAL_LEAD"),
-            new DemoUser("vikram.shah", "Vikram Shah", "TECHNICAL_LEAD"),
-            new DemoUser("isha.nair", "Isha Nair", "COMMUNICATION_LEAD"),
-            new DemoUser("neha.rao", "Neha Rao", "COMMUNICATION_LEAD"),
-            new DemoUser("om.prakash", "Om Prakash", "COMMUNICATION_LEAD"),
-            new DemoUser("rohan.iyer", "Rohan Iyer", "COMMUNICATION_LEAD")
+    private static final Set<String> ALLOWED_REGISTER_ROLES = Set.of(
+            "TEAM_LEAD",
+            "ESCALATION_MANAGER",
+            "SENIOR_MANAGER",
+            "TECHNICAL_LEAD",
+            "COMMUNICATION_LEAD"
     );
 
+    private final AppUserRepository appUserRepository;
+    private final PasswordHasher passwordHasher;
     private final String adminUsername;
     private final String adminPassword;
     private final String adminDisplayName;
 
     public AdminLoginService(
+            AppUserRepository appUserRepository,
+            PasswordHasher passwordHasher,
             @Value("${app.admin.username:admin}") String adminUsername,
             @Value("${app.admin.password:admin123}") String adminPassword,
             @Value("${app.admin.display-name:Demo Administrator}") String adminDisplayName
     ) {
+        this.appUserRepository = appUserRepository;
+        this.passwordHasher = passwordHasher;
         this.adminUsername = adminUsername;
         this.adminPassword = adminPassword;
         this.adminDisplayName = adminDisplayName;
     }
 
     public AdminLoginResponse login(AdminLoginRequest request) {
-        if (!adminUsername.equals(request.username()) || !adminPassword.equals(request.password())) {
-            return DEMO_USERS.stream()
-                    .filter(user -> user.username().equals(request.username()) && DEMO_PASSWORD.equals(request.password()))
-                    .findFirst()
-                    .map(user -> new AdminLoginResponse(user.username(), user.displayName(), user.role()))
-                    .orElseThrow(() -> new InvalidIncidentTransitionException("Invalid username or password."));
+        String username = normalizeUsername(request.username());
+        if (adminUsername.equals(username) && adminPassword.equals(request.password())) {
+            return new AdminLoginResponse(adminUsername, adminDisplayName, "ADMIN");
         }
-        return new AdminLoginResponse(adminUsername, adminDisplayName, "ADMIN");
+
+        AppUser user = appUserRepository.findByUsernameIgnoreCase(username)
+                .orElseThrow(() -> new InvalidIncidentTransitionException("Invalid username or password."));
+        if (!passwordHasher.verify(request.password(), user.getPasswordHash())) {
+            throw new InvalidIncidentTransitionException("Invalid username or password.");
+        }
+        return toResponse(user);
     }
 
-    private record DemoUser(String username, String displayName, String role) {
+    public AdminLoginResponse register(AdminRegisterRequest request) {
+        String username = normalizeUsername(request.username());
+        String role = normalizeRole(request.role());
+        if (adminUsername.equalsIgnoreCase(username) || appUserRepository.existsByUsernameIgnoreCase(username)) {
+            throw new InvalidIncidentTransitionException("Username is already registered.");
+        }
+
+        AppUser user = new AppUser();
+        user.setUsername(username);
+        user.setDisplayName(request.displayName().trim());
+        user.setPasswordHash(passwordHasher.hash(request.password()));
+        user.setRole(role);
+        user.setCreatedAt(LocalDateTime.now());
+        return toResponse(appUserRepository.save(user));
+    }
+
+    private String normalizeUsername(String username) {
+        return username.trim().toLowerCase();
+    }
+
+    private String normalizeRole(String role) {
+        String normalized = role.trim().toUpperCase();
+        if (!ALLOWED_REGISTER_ROLES.contains(normalized)) {
+            throw new InvalidIncidentTransitionException("Select a valid role for registration.");
+        }
+        return normalized;
+    }
+
+    private AdminLoginResponse toResponse(AppUser user) {
+        return new AdminLoginResponse(user.getUsername(), user.getDisplayName(), user.getRole());
     }
 }

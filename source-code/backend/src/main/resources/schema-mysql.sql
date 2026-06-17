@@ -1,11 +1,13 @@
-DROP TABLE IF EXISTS incident_timeline;
-DROP TABLE IF EXISTS incident_rca;
-DROP TABLE IF EXISTS incident_resolution;
-DROP TABLE IF EXISTS incident_assessment;
-DROP TABLE IF EXISTS knowledge_base;
-DROP TABLE IF EXISTS incidents;
+CREATE TABLE IF NOT EXISTS app_users (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(80) NOT NULL UNIQUE,
+    display_name VARCHAR(120) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(40) NOT NULL,
+    created_at DATETIME NOT NULL
+);
 
-CREATE TABLE incidents (
+CREATE TABLE IF NOT EXISTS incidents (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     title VARCHAR(160) NOT NULL,
     description TEXT NOT NULL,
@@ -27,7 +29,7 @@ CREATE TABLE incidents (
     closed_at DATETIME NULL
 );
 
-CREATE TABLE incident_assessment (
+CREATE TABLE IF NOT EXISTS incident_assessment (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     incident_id BIGINT NOT NULL UNIQUE,
     customer_impact TEXT NOT NULL,
@@ -38,7 +40,7 @@ CREATE TABLE incident_assessment (
     CONSTRAINT fk_assessment_incident FOREIGN KEY (incident_id) REFERENCES incidents(id)
 );
 
-CREATE TABLE incident_resolution (
+CREATE TABLE IF NOT EXISTS incident_resolution (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     incident_id BIGINT NOT NULL UNIQUE,
     resolution_summary TEXT NOT NULL,
@@ -48,7 +50,7 @@ CREATE TABLE incident_resolution (
     CONSTRAINT fk_resolution_incident FOREIGN KEY (incident_id) REFERENCES incidents(id)
 );
 
-CREATE TABLE incident_rca (
+CREATE TABLE IF NOT EXISTS incident_rca (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     incident_id BIGINT NOT NULL UNIQUE,
     root_cause TEXT NOT NULL,
@@ -61,7 +63,7 @@ CREATE TABLE incident_rca (
     CONSTRAINT fk_rca_incident FOREIGN KEY (incident_id) REFERENCES incidents(id)
 );
 
-CREATE TABLE incident_timeline (
+CREATE TABLE IF NOT EXISTS incident_timeline (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     incident_id BIGINT NOT NULL,
     event_type VARCHAR(32) NOT NULL,
@@ -71,7 +73,7 @@ CREATE TABLE incident_timeline (
     CONSTRAINT fk_timeline_incident FOREIGN KEY (incident_id) REFERENCES incidents(id)
 );
 
-CREATE TABLE knowledge_base (
+CREATE TABLE IF NOT EXISTS knowledge_base (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     title VARCHAR(160) NOT NULL,
     category VARCHAR(80) NOT NULL,

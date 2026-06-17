@@ -2,6 +2,7 @@ package com.example.ims.controller;
 
 import com.example.ims.dto.AdminLoginRequest;
 import com.example.ims.dto.AdminLoginResponse;
+import com.example.ims.dto.AdminRegisterRequest;
 import com.example.ims.service.AdminLoginService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,5 +22,10 @@ public class AdminLoginController {
     @PostMapping("/login")
     public AdminLoginResponse login(@Valid @RequestBody AdminLoginRequest request) {
         return adminLoginService.login(request);
+    }
+
+    @PostMapping("/register")
+    public AdminLoginResponse register(@Valid @RequestBody AdminRegisterRequest request) {
+        return adminLoginService.register(request);
     }
 }

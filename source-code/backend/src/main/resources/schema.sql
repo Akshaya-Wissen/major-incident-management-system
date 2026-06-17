@@ -3,7 +3,17 @@ DROP TABLE IF EXISTS incident_rca;
 DROP TABLE IF EXISTS incident_resolution;
 DROP TABLE IF EXISTS incident_assessment;
 DROP TABLE IF EXISTS knowledge_base;
+DROP TABLE IF EXISTS app_users;
 DROP TABLE IF EXISTS incidents;
+
+CREATE TABLE app_users (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(80) NOT NULL UNIQUE,
+    display_name VARCHAR(120) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(40) NOT NULL,
+    created_at TIMESTAMP NOT NULL
+);
 
 CREATE TABLE incidents (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
